@@ -1,11 +1,9 @@
 import sys
 
-sys.path.append("..")
-
 import os
 import requests
 import json
-from utils import setup_logger
+from src.utils import setup_logger
 from typing import List
 from pprint import pprint
 
@@ -30,13 +28,13 @@ class WixAPI:
             "Authorization": self.api_key,
             "wix-site-id": self.site_id,
         }
-        self.logger = setup_logger("wix_api", "../logs/wix_api.log")
+        self.logger = setup_logger("wix_api", "logs/wix_api.log")
 
     def _handle_response(self, response):
         if response.status_code != 200:
             self.logger.error(f"Request failed with status code {response.status_code}")
         try:
-            return response
+            return response.json()
         except json.JSONDecodeError:
             self.logger.error("Failed to decode API response")
 
@@ -129,7 +127,7 @@ class Inventory(WixAPI):
             self.logger.info(
                 f"get_inventory_variants status code: {response.status_code}"
             )
-            return self._handle_response(response)
+            return self._handle_response(response), response
         except requests.RequestException as e:
             self.logger.error(str(e))
 
@@ -160,8 +158,8 @@ class Inventory(WixAPI):
                 endpoint, headers=self.headers, data=json.dumps(data)
             )
             response.raise_for_status()
-            self.logger.info(f"Decrease inventory status code: {response.status_code}")
-            return self._handle_response(response)
+            self.logger.info(f"Decrease inventory status code for {productId}-{variantId}: {response.status_code}")
+            return self._handle_response(response), response
         except requests.RequestException as e:
             self.logger.error(str(e))
 
